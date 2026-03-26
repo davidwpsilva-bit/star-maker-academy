@@ -9,9 +9,10 @@ interface MemberCardProps {
   hasVoted: boolean;
   onVote: (id: string) => void;
   onSelect: (member: Member) => void;
+  hideVotes?: boolean;
 }
 
-export function MemberCard({ member, rank, votes, hasVoted, onVote, onSelect }: MemberCardProps) {
+export function MemberCard({ member, rank, votes, hasVoted, onVote, onSelect, hideVotes }: MemberCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -20,15 +21,6 @@ export function MemberCard({ member, rank, votes, hasVoted, onVote, onSelect }: 
       className="group relative card-gradient rounded-xl border border-border overflow-hidden cursor-pointer hover:border-primary/50 transition-all duration-300"
       onClick={() => onSelect(member)}
     >
-      {/* Rank badge */}
-      <div className="absolute top-3 left-3 z-10">
-        <div className={`flex items-center justify-center w-8 h-8 rounded-full font-display text-lg ${
-          rank <= 3 ? "bg-gold text-gold-foreground glow-gold" : "bg-muted text-foreground"
-        }`}>
-          {rank}
-        </div>
-      </div>
-
       {/* Image */}
       <div className="relative aspect-[3/4] overflow-hidden">
         <img
@@ -55,13 +47,7 @@ export function MemberCard({ member, rank, votes, hasVoted, onVote, onSelect }: 
         <h3 className="text-foreground font-semibold text-lg leading-tight mt-1">{member.name}</h3>
         <p className="text-muted-foreground text-sm">{member.nameJp}</p>
         
-        <div className="flex items-center justify-between mt-3">
-          <div className="flex items-center gap-1.5">
-            <Star className="w-4 h-4 text-gold fill-gold" />
-            <span className="text-foreground font-semibold text-sm animate-count-up">{votes}</span>
-            <span className="text-muted-foreground text-xs">votos</span>
-          </div>
-
+        <div className="flex items-center justify-end mt-3">
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={(e) => {

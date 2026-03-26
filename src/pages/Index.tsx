@@ -1,29 +1,24 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Crown, Heart, Users, Trophy, Sparkles } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Crown, Heart, Users, Trophy, Sparkles, LogOut, Shield } from "lucide-react";
+import { Link, Navigate } from "react-router-dom";
 import { members, type Member } from "@/data/members";
 import { MemberCard } from "@/components/MemberCard";
 import { MemberModal } from "@/components/MemberModal";
 import { useVotes } from "@/hooks/useVotes";
+import { useAuth } from "@/hooks/useAuth";
 import heroBg from "@/assets/hero-bg.jpg";
 
 const Index = () => {
-  const { vote, getVotes, hasVoted, totalVotes } = useVotes();
+  const { user, isAdmin, loading, signOut } = useAuth();
+  const { vote, hasVoted, totalVotes } = useVotes();
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [filter, setFilter] = useState<"all" | "Team A" | "Team B">("all");
 
-  const rankedMembers = useMemo(() => {
-    const sorted = [...members].sort((a, b) => getVotes(b.id) - getVotes(a.id));
-    return sorted;
-  }, [getVotes]);
+  if (loading) return null;
+  if (!user) return <Navigate to="/auth" replace />;
 
-  const filteredMembers = useMemo(() => {
-    if (filter === "all") return rankedMembers;
-    return rankedMembers.filter((m) => m.team === filter);
-  }, [rankedMembers, filter]);
-
-  const getRank = (memberId: string) => rankedMembers.findIndex((m) => m.id === memberId) + 1;
+  const filteredMembers = filter === "all" ? members : members.filter((m) => m.team === filter);
 
   return (
     <div className="min-h-screen bg-background">
@@ -34,11 +29,30 @@ const Index = () => {
           <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background" />
         </div>
         
-        <div className="relative max-w-6xl mx-auto px-4 pt-16 pb-12 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
+        <div className="relative max-w-6xl mx-auto px-4 pt-6 flex items-center justify-between">
+          <div />
+          <div className="flex items-center gap-3">
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs font-medium hover:bg-destructive/20 transition-colors"
+              >
+                <Shield className="w-3.5 h-3.5" />
+                Admin
+              </Link>
+            )}
+            <button
+              onClick={signOut}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted text-muted-foreground text-xs font-medium hover:text-foreground transition-colors"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              Sair
+            </button>
+          </div>
+        </div>
+
+        <div className="relative max-w-6xl mx-auto px-4 pt-8 pb-12 text-center">
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-6">
               <Crown className="w-4 h-4" />
               Votação Aberta
@@ -62,7 +76,7 @@ const Index = () => {
             Escolha sua membro favorita. Seu voto decide o ranking final.
           </motion.p>
 
-          {/* Stats */}
+          {/* Stats - only total votes, no individual counts */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -86,20 +100,17 @@ const Index = () => {
             </div>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="mt-6"
-          >
-            <Link
-              to="/results"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gold/10 border border-gold/20 text-gold font-medium text-sm hover:bg-gold/20 transition-colors"
-            >
-              <Sparkles className="w-4 h-4" />
-              Ver Resultado
-            </Link>
-          </motion.div>
+          {isAdmin && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-6">
+              <Link
+                to="/admin"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gold/10 border border-gold/20 text-gold font-medium text-sm hover:bg-gold/20 transition-colors"
+              >
+                <Sparkles className="w-4 h-4" />
+                Ver Resultado (Admin)
+              </Link>
+            </motion.div>
+          )}
         </div>
       </div>
 
@@ -122,18 +133,19 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Member Grid */}
+      {/* Member Grid - no vote counts shown */}
       <div className="max-w-6xl mx-auto px-4 pb-20">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          {filteredMembers.map((member) => (
+          {filteredMembers.map((member, i) => (
             <MemberCard
               key={member.id}
               member={member}
-              rank={getRank(member.id)}
-              votes={getVotes(member.id)}
+              rank={i + 1}
+              votes={0}
               hasVoted={hasVoted(member.id)}
               onVote={vote}
               onSelect={setSelectedMember}
+              hideVotes
             />
           ))}
         </div>
@@ -143,11 +155,12 @@ const Index = () => {
       {selectedMember && (
         <MemberModal
           member={selectedMember}
-          votes={getVotes(selectedMember.id)}
+          votes={0}
           hasVoted={hasVoted(selectedMember.id)}
-          rank={getRank(selectedMember.id)}
+          rank={0}
           onVote={vote}
           onClose={() => setSelectedMember(null)}
+          hideVotes
         />
       )}
     </div>
