@@ -387,11 +387,7 @@ const Results = () => {
           <div className="flex justify-center mt-12 gap-4">
             {phase === "revealing" && (
               <button
-                onClick={() => {
-                  setRevealIndex(revealOrder.length);
-                  setPhase("complete");
-                  setTierAnnouncement("none");
-                }}
+                onClick={skipReveal}
                 className="px-6 py-2.5 rounded-xl bg-muted text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
               >
                 Pular Revelação
