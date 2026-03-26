@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Crown, Star, Trophy, Sparkles, ArrowLeft, ChevronRight, Play } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -13,8 +13,8 @@ const Results = () => {
   const [phase, setPhase] = useState<"intro" | "revealing" | "complete">("intro");
   const [revealIndex, setRevealIndex] = useState(-1);
   const [tierAnnouncement, setTierAnnouncement] = useState<"none" | "under" | "senbatsu">("none");
-  const [isPaused, setIsPaused] = useState(false);
-  const announcedTiers = useState(new Set<string>())[0];
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const announcedRef = useRef<Set<string>>(new Set());
 
   const rankedMembers = useMemo(() => {
     return [...members].sort((a, b) => getVotes(b.id) - getVotes(a.id));
@@ -25,62 +25,74 @@ const Results = () => {
 
   const revealOrder = useMemo(() => [...rankedMembers].reverse(), [rankedMembers]);
 
-  const startReveal = useCallback(() => {
-    setPhase("revealing");
-    setRevealIndex(0);
-    setTierAnnouncement("none");
-    setIsPaused(false);
-    announcedTiers.clear();
-  }, [announcedTiers]);
-
-  // Handle tier announcements
+  // Clean up timer on unmount
   useEffect(() => {
-    if (phase !== "revealing" || revealIndex < 0 || isPaused) return;
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
-    const currentRank = rankedMembers.length - revealIndex;
+  const scheduleNext = useCallback((nextIndex: number, delay: number) => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      advanceReveal(nextIndex);
+    }, delay);
+  }, []);
 
-    // Show Under Girls announcement before revealing the under girls tier
-    if (currentRank === rankedMembers.length && !announcedTiers.has("under")) {
-      announcedTiers.add("under");
-      setIsPaused(true);
-      setTierAnnouncement("under");
-      const timer = setTimeout(() => {
-        setTierAnnouncement("none");
-        setIsPaused(false);
-      }, 2200);
-      return () => clearTimeout(timer);
-    }
-
-    // Show Senbatsu announcement before revealing senbatsu tier
-    if (currentRank === SENBATSU_COUNT && !announcedTiers.has("senbatsu")) {
-      announcedTiers.add("senbatsu");
-      setIsPaused(true);
-      setTierAnnouncement("senbatsu");
-      const timer = setTimeout(() => {
-        setTierAnnouncement("none");
-        setIsPaused(false);
-      }, 2500);
-      return () => clearTimeout(timer);
-    }
-  }, [phase, revealIndex, isPaused, rankedMembers, announcedTiers]);
-
-  // Handle reveal progression
-  useEffect(() => {
-    if (phase !== "revealing" || revealIndex < 0 || isPaused) return;
-
-    if (revealIndex >= revealOrder.length) {
+  const advanceReveal = useCallback((index: number) => {
+    if (index >= rankedMembers.length) {
+      setRevealIndex(rankedMembers.length);
       setPhase("complete");
+      setTierAnnouncement("none");
       return;
     }
 
-    const currentRank = rankedMembers.length - revealIndex;
-    const delay = currentRank <= 3 ? 2500 : currentRank <= SENBATSU_COUNT ? 1800 : 1200;
+    const currentRank = rankedMembers.length - index;
 
-    const timer = setTimeout(() => {
-      setRevealIndex((i) => i + 1);
-    }, delay);
-    return () => clearTimeout(timer);
-  }, [phase, revealIndex, isPaused, revealOrder, rankedMembers]);
+    // Check if we need a tier announcement before this reveal
+    if (currentRank === rankedMembers.length && !announcedRef.current.has("under")) {
+      announcedRef.current.add("under");
+      setTierAnnouncement("under");
+      setRevealIndex(index);
+      // Show tier for 2.2s, then start revealing
+      scheduleNext(index, 2200);
+      return;
+    }
+
+    if (currentRank === SENBATSU_COUNT && !announcedRef.current.has("senbatsu")) {
+      announcedRef.current.add("senbatsu");
+      setTierAnnouncement("senbatsu");
+      setRevealIndex(index);
+      // Show tier for 2.5s, then start revealing
+      scheduleNext(index, 2500);
+      return;
+    }
+
+    // Normal reveal: show the member and schedule the next one
+    setTierAnnouncement("none");
+    setRevealIndex(index + 1); // reveal this member (index becomes visible)
+
+    const nextRank = rankedMembers.length - (index + 1);
+    const delay = nextRank <= 3 ? 2500 : nextRank <= SENBATSU_COUNT ? 1800 : 1200;
+    scheduleNext(index + 1, delay);
+  }, [rankedMembers, scheduleNext]);
+
+  const startReveal = useCallback(() => {
+    announcedRef.current.clear();
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setPhase("revealing");
+    setRevealIndex(0);
+    setTierAnnouncement("none");
+    // Kick off the reveal chain
+    setTimeout(() => advanceReveal(0), 100);
+  }, [advanceReveal]);
+
+  const skipReveal = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setRevealIndex(rankedMembers.length);
+    setPhase("complete");
+    setTierAnnouncement("none");
+  }, [rankedMembers]);
 
   const getRank = (memberId: string) => rankedMembers.findIndex((m) => m.id === memberId) + 1;
 
@@ -375,11 +387,7 @@ const Results = () => {
           <div className="flex justify-center mt-12 gap-4">
             {phase === "revealing" && (
               <button
-                onClick={() => {
-                  setRevealIndex(revealOrder.length);
-                  setPhase("complete");
-                  setTierAnnouncement("none");
-                }}
+                onClick={skipReveal}
                 className="px-6 py-2.5 rounded-xl bg-muted text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
               >
                 Pular Revelação
