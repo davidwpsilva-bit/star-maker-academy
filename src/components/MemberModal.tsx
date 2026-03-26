@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Heart, Star, Calendar, Users, Mic } from "lucide-react";
+import { X, Heart, Calendar, Mic } from "lucide-react";
 import type { Member } from "@/data/members";
 
 interface MemberModalProps {
@@ -9,9 +9,10 @@ interface MemberModalProps {
   rank: number;
   onVote: (id: string) => void;
   onClose: () => void;
+  hideVotes?: boolean;
 }
 
-export function MemberModal({ member, votes, hasVoted, rank, onVote, onClose }: MemberModalProps) {
+export function MemberModal({ member, votes, hasVoted, rank, onVote, onClose, hideVotes }: MemberModalProps) {
   if (!member) return null;
 
   return (
@@ -39,21 +40,8 @@ export function MemberModal({ member, votes, hasVoted, rank, onVote, onClose }: 
 
           {/* Image */}
           <div className="relative h-72 overflow-hidden">
-            <img
-              src={member.image}
-              alt={member.name}
-              className="w-full h-full object-cover object-top"
-            />
+            <img src={member.image} alt={member.name} className="w-full h-full object-cover object-top" />
             <div className="absolute inset-0 bg-gradient-to-t from-card via-card/40 to-transparent" />
-            
-            {/* Rank */}
-            <div className="absolute bottom-4 left-4">
-              <div className={`flex items-center justify-center w-12 h-12 rounded-full font-display text-2xl ${
-                rank <= 3 ? "bg-gold text-gold-foreground glow-gold" : "bg-muted text-foreground"
-              }`}>
-                {rank}
-              </div>
-            </div>
           </div>
 
           {/* Content */}
@@ -70,7 +58,7 @@ export function MemberModal({ member, votes, hasVoted, rank, onVote, onClose }: 
 
             <p className="mt-3 text-muted-foreground italic">"{member.motto}"</p>
 
-            <div className="grid grid-cols-3 gap-3 mt-5">
+            <div className="grid grid-cols-2 gap-3 mt-5">
               <div className="flex flex-col items-center p-3 rounded-lg bg-muted/50">
                 <Calendar className="w-4 h-4 text-primary mb-1" />
                 <span className="text-xs text-muted-foreground">Idade</span>
@@ -80,11 +68,6 @@ export function MemberModal({ member, votes, hasVoted, rank, onVote, onClose }: 
                 <Mic className="w-4 h-4 text-primary mb-1" />
                 <span className="text-xs text-muted-foreground">Posição</span>
                 <span className="text-foreground font-semibold text-xs text-center">{member.position}</span>
-              </div>
-              <div className="flex flex-col items-center p-3 rounded-lg bg-muted/50">
-                <Star className="w-4 h-4 text-gold fill-gold mb-1" />
-                <span className="text-xs text-muted-foreground">Votos</span>
-                <span className="text-foreground font-semibold">{votes}</span>
               </div>
             </div>
 
