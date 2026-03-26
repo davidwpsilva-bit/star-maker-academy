@@ -174,7 +174,7 @@ const Results = () => {
 
       {/* TIER ANNOUNCEMENT OVERLAY */}
       <AnimatePresence>
-        {showTier !== "none" && (
+        {tierAnnouncement !== "none" && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -188,7 +188,7 @@ const Results = () => {
               transition={{ type: "spring", damping: 15 }}
               className="text-center"
             >
-              {showTier === "under" ? (
+              {tierAnnouncement === "under" ? (
                 <>
                   <Sparkles className="w-12 h-12 text-primary mx-auto mb-4 animate-pulse-glow" />
                   <h2 className="font-display text-5xl sm:text-7xl text-primary tracking-widest">UNDER GIRLS</h2>
@@ -378,7 +378,7 @@ const Results = () => {
                 onClick={() => {
                   setRevealIndex(revealOrder.length);
                   setPhase("complete");
-                  setShowTier("none");
+                  setTierAnnouncement("none");
                 }}
                 className="px-6 py-2.5 rounded-xl bg-muted text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
               >
@@ -390,7 +390,7 @@ const Results = () => {
                 onClick={() => {
                   setPhase("intro");
                   setRevealIndex(-1);
-                  setShowTier("none");
+                  setTierAnnouncement("none");
                 }}
                 className="px-6 py-2.5 rounded-xl bg-muted text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
               >
