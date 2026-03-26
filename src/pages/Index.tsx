@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Crown, Heart, Users, Trophy } from "lucide-react";
+import { Crown, Heart, Users, Trophy, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
 import { members, type Member } from "@/data/members";
 import { MemberCard } from "@/components/MemberCard";
 import { MemberModal } from "@/components/MemberModal";
@@ -83,6 +84,21 @@ const Index = () => {
               </div>
               <span className="text-xs text-muted-foreground mt-1">Votos Totais</span>
             </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="mt-6"
+          >
+            <Link
+              to="/results"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gold/10 border border-gold/20 text-gold font-medium text-sm hover:bg-gold/20 transition-colors"
+            >
+              <Sparkles className="w-4 h-4" />
+              Ver Resultado
+            </Link>
           </motion.div>
         </div>
       </div>
